@@ -1,0 +1,617 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏈</text></svg>">
+
+<title>Line Room</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+:root{
+  --ground:#EEF2EE; --surface:#FFFFFF; --surface-2:#F6F8F5; --ink:#14201A; --ink-2:#4A5A51; --ink-3:#7C8B82;
+  --line:#D6DED8; --accent:#2750B8; --accent-soft:#E3EAFA; --up:#17804A; --up-soft:#DDF1E5; --down:#B63A27; --down-soft:#F8E1DC;
+  --warn:#9A6A00; --warn-soft:#FBEFCF; --chip:#E7ECE8; --focus:#2750B8;
+  --display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif; --body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --ground:#0E1411; --surface:#151D19; --surface-2:#1B2520; --ink:#E4EBE6; --ink-2:#A9B7AF; --ink-3:#7A8A81;
+  --line:#28342E; --accent:#8AA8F2; --accent-soft:#1E2A47; --up:#5DC58D; --up-soft:#15321F; --down:#EE8B78; --down-soft:#3A1E19;
+  --warn:#E6B84C; --warn-soft:#352B12; --chip:#222C27; --focus:#8AA8F2;
+}}
+:root[data-theme="dark"]{
+  --ground:#0E1411; --surface:#151D19; --surface-2:#1B2520; --ink:#E4EBE6; --ink-2:#A9B7AF; --ink-3:#7A8A81;
+  --line:#28342E; --accent:#8AA8F2; --accent-soft:#1E2A47; --up:#5DC58D; --up-soft:#15321F; --down:#EE8B78; --down-soft:#3A1E19;
+  --warn:#E6B84C; --warn-soft:#352B12; --chip:#222C27; --focus:#8AA8F2;
+}
+*{box-sizing:border-box}
+body{background:var(--ground);color:var(--ink);font-family:var(--body);font-size:14px;line-height:1.45;padding-inline:16px;padding-block:0 40px}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.num{font-variant-numeric:tabular-nums}
+.wrap{max-width:1280px;margin:0 auto}
+
+/* header */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--ground);margin-inline:-16px;padding:12px 16px 10px;border-bottom:1px solid var(--line)}
+.top-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;max-width:1280px;margin:0 auto}
+.brand{display:flex;align-items:baseline;gap:10px;margin-right:auto}
+.brand h1{font-family:var(--display);font-weight:700;font-size:28px;letter-spacing:.01em;margin:0;line-height:1;text-transform:uppercase}
+.brand .meta{color:var(--ink-3);font-size:12px}
+.seg{display:inline-flex;background:var(--chip);border-radius:8px;padding:3px;gap:2px}
+.seg button{border:0;background:transparent;padding:6px 12px;border-radius:6px;cursor:pointer;font-weight:500;color:var(--ink-2);white-space:nowrap}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.week-pick{display:flex;align-items:center;gap:6px}
+.week-pick label{font-size:12px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.06em}
+select,input[type=text],input[type=number],textarea{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:6px 8px}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:6px 12px;cursor:pointer;font-weight:500}
+.btn:hover{border-color:var(--ink-3)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--surface)}
+.tune-toggle{display:none}
+
+/* layout */
+.layout{display:grid;grid-template-columns:300px minmax(0,1fr);gap:20px;max-width:1280px;margin:16px auto 0}
+.panel{align-self:start;position:sticky;top:calc(env(safe-area-inset-top,0px) + 76px);max-height:calc(100vh - 96px);overflow:auto;display:flex;flex-direction:column;gap:12px;padding-bottom:12px}
+.box{background:var(--surface);border:1px solid var(--line);border-radius:10px}
+details.box>summary{list-style:none;cursor:pointer;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+details.box>summary::-webkit-details-marker{display:none}
+details.box>summary h2{white-space:nowrap;font-family:var(--display);font-size:18px;font-weight:600;text-transform:uppercase;letter-spacing:.03em;margin:0}
+details.box>summary .hint{font-size:12px;color:var(--ink-3);margin-left:auto;text-align:right;white-space:nowrap}
+details.box>summary::after{content:"+";font-size:18px;color:var(--ink-3)}
+details.box[open]>summary::after{content:"–"}
+.box-body{padding:0 14px 14px;display:flex;flex-direction:column;gap:12px}
+.slider{display:grid;grid-template-columns:1fr auto;gap:2px 8px}
+.slider label{font-weight:500}
+.slider output{font-variant-numeric:tabular-nums;color:var(--accent);font-weight:600}
+.slider input{grid-column:1/-1;width:100%;accent-color:var(--accent)}
+.slider p{grid-column:1/-1;margin:0;font-size:12px;color:var(--ink-3)}
+.grid2{display:grid;grid-template-columns:1fr 112px;gap:6px 8px;align-items:center}
+.grid2 label{font-size:13px;color:var(--ink-2)}
+.grid2 input,.grid2 select{width:100%;text-align:right}
+.grid2 .full{grid-column:1/-1}
+.grid2 input.full{text-align:left}
+.grid2 select.wide{grid-column:2;min-width:0}
+.subhead{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-3);margin:4px 0 -4px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:4px 10px;cursor:pointer;font-size:13px;font-weight:500;color:var(--ink-2)}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.list{display:flex;flex-direction:column;gap:6px}
+.list-item{display:flex;align-items:center;gap:8px;background:var(--surface-2);border-radius:6px;padding:6px 8px;font-size:13px}
+.list-item .grow{flex:1;min-width:0}
+.x{border:0;background:transparent;cursor:pointer;color:var(--ink-3);font-size:16px;line-height:1;padding:2px 4px}
+.x:hover{color:var(--down)}
+.empty{font-size:12px;color:var(--ink-3);margin:0}
+.tag-form{display:grid;grid-template-columns:1fr 1fr 64px;gap:6px}
+.tag-form .btn{grid-column:1/-1}
+.note{font-size:12px;color:var(--ink-3);margin:0}
+
+/* summary strip */
+.strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-bottom:12px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.stat .k{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-3)}
+.stat .v{font-family:var(--display);font-size:24px;font-weight:600;line-height:1.1}
+.stat .s{font-size:12px;color:var(--ink-2)}
+
+.toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
+.toolbar input[type=text]{flex:1 1 180px;min-width:0}
+.toolbar .toggle{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--ink-2)}
+
+/* table */
+.table-wrap{background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:720px}
+th{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--ink-3);font-weight:600;text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);white-space:nowrap;background:var(--surface-2);cursor:pointer;user-select:none}
+th.r,td.r{text-align:right}
+th[aria-sort]::after{content:" ↓";color:var(--accent)}
+td{padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:middle;font-variant-numeric:tabular-nums}
+tbody tr.row{cursor:pointer}
+tbody tr.row:hover td{background:var(--surface-2)}
+tr.open td{background:var(--surface-2)}
+.rk{color:var(--ink-3);width:36px}
+.pname{font-weight:600;white-space:nowrap}
+.psub{font-size:12px;color:var(--ink-3);white-space:nowrap}
+.pos{display:inline-block;font-size:11px;font-weight:600;padding:1px 6px;border-radius:4px;background:var(--chip);color:var(--ink-2);margin-right:4px}
+.flag{display:inline-block;font-size:11px;font-weight:600;padding:1px 6px;border-radius:4px;margin-left:6px;vertical-align:1px}
+.flag.q{background:var(--warn-soft);color:var(--warn)}
+.flag.out{background:var(--down-soft);color:var(--down)}
+.flag.bump{background:var(--accent-soft);color:var(--accent)}
+.opp{white-space:nowrap}
+.imp{font-size:12px;color:var(--ink-3)}
+.line-est{font-style:italic}
+.stats{font-size:12px;color:var(--ink-2);white-space:nowrap}
+.pts{font-family:var(--display);font-size:20px;font-weight:600}
+.model{color:var(--ink-3)}
+.delta{font-weight:600;font-size:13px;padding:2px 6px;border-radius:4px;white-space:nowrap}
+.delta.up{color:var(--up);background:var(--up-soft)}
+.delta.down{color:var(--down);background:var(--down-soft)}
+.delta.flat{color:var(--ink-3)}
+.bars{display:block}
+.bars rect{fill:var(--accent)}
+.bars rect.bye{fill:var(--line)}
+
+.detail td{padding:0 10px 14px;cursor:default}
+.detail-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;padding-top:10px}
+.detail h3{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-3);margin:0 0 6px;font-weight:600}
+.kv{display:grid;grid-template-columns:1fr auto;gap:2px 12px;font-size:13px}
+.kv span:nth-child(odd){color:var(--ink-2)}
+.bump-ctl{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.bump-ctl input{width:70px;text-align:right}
+.more{display:flex;justify-content:center;padding:10px}
+.foot{max-width:1280px;margin:18px auto 0;color:var(--ink-3);font-size:12px}
+.foot p{margin:4px 0;max-width:80ch}
+.loading{padding:40px;text-align:center;color:var(--ink-3)}
+textarea{width:100%;min-height:70px;font-size:12px;font-family:ui-monospace,Menlo,monospace}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--surface);padding:8px 14px;border-radius:8px;font-size:13px;z-index:50}
+
+@media (max-width: 900px){
+  .layout{grid-template-columns:minmax(0,1fr)}
+  .panel{position:static;max-height:none;order:2}
+  .panel[data-collapsed="true"]{display:none}
+  .tune-toggle{display:inline-block}
+  .panel{order:0}
+}
+@media (max-width: 520px){
+  .brand h1{font-size:24px}
+  .brand .meta{display:none}
+  .stats-col{display:none}
+  table{min-width:0}
+  .opp-col,.model-col{display:none}
+  td,th{padding-inline:6px}
+}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+
+
+<header class="top">
+  <div class="top-row">
+    <div class="brand"><h1>Line Room</h1><span class="meta" id="meta">Loading data…</span></div>
+    <div class="seg" role="group" aria-label="View">
+      <button id="v-week" aria-pressed="true">This week</button>
+      <button id="v-ros" aria-pressed="false">Rest of season</button>
+    </div>
+    <div class="week-pick" id="week-pick"><label for="week">Week</label><select id="week"></select></div>
+    <button class="btn tune-toggle" id="tune-toggle" aria-expanded="false">Tune model</button>
+  </div>
+</header>
+
+<div class="layout">
+  <aside class="panel" id="panel" data-collapsed="true" aria-label="Model settings">
+    <details class="box" open>
+      <summary><h2>Model weights</h2><span class="hint" id="w-hint"></span></summary>
+      <div class="box-body" id="weights"></div>
+    </details>
+    <details class="box">
+      <summary><h2>League scoring</h2><span class="hint" id="sc-hint">Full PPR</span></summary>
+      <div class="box-body">
+        <div class="chips" id="presets"></div>
+        <div id="scoring"></div>
+      </div>
+    </details>
+    <details class="box">
+      <summary><h2>Matchup tags</h2><span class="hint" id="tag-hint"></span></summary>
+      <div class="box-body">
+        <p class="note">Your read on a defense. Applies to yards, catches, and TDs for that position against them, on top of the model's own matchup adjustment.</p>
+        <div class="tag-form">
+          <select id="tag-team" aria-label="Defense"></select>
+          <select id="tag-pos" aria-label="Position"><option>QB</option><option>RB</option><option selected>WR</option><option>TE</option><option value="ALL">All</option></select>
+          <input id="tag-pct" type="number" value="10" step="1" aria-label="Percent">
+          <button class="btn" id="tag-add">Add tag</button>
+        </div>
+        <div class="list" id="tags"></div>
+      </div>
+    </details>
+    <details class="box">
+      <summary><h2>Player bumps</h2><span class="hint" id="bump-hint"></span></summary>
+      <div class="box-body">
+        <p class="note">Tap any player row to bump them up or down, or mark them out. Bumps multiply projected points every week.</p>
+        <div class="list" id="bumps"></div>
+      </div>
+    </details>
+    <details class="box">
+      <summary><h2>Save and share</h2><span class="hint">Settings</span></summary>
+      <div class="box-body">
+        <p class="note">Settings save in this browser automatically. Copy them to move to another device or to send to Claude as the site defaults.</p>
+        <div class="chips"><button class="btn" id="copy">Copy settings</button><button class="btn" id="reset">Reset all</button></div>
+        <textarea id="import" placeholder="Paste copied settings here" aria-label="Paste settings"></textarea>
+        <button class="btn" id="import-btn">Load pasted settings</button>
+      </div>
+    </details>
+  </aside>
+
+  <main>
+    <div class="strip" id="strip"></div>
+    <div class="toolbar">
+      <div class="chips" id="posf" role="group" aria-label="Position filter"></div>
+      <input type="text" id="q" placeholder="Search player or team" aria-label="Search">
+      <label class="toggle"><input type="checkbox" id="changed"> Only my changes</label>
+    </div>
+    <div class="table-wrap"><table>
+      <thead id="thead"></thead>
+      <tbody id="tbody"><tr><td class="loading" colspan="8">Building projections…</td></tr></tbody>
+    </table></div>
+    <div class="more" id="more-wrap" hidden><button class="btn" id="more">Show more</button></div>
+  </main>
+</div>
+<footer class="foot">
+  <p><strong>How it works.</strong> Game spreads and totals set each team's implied points, which move its pass attempts, carries, yards, and touchdowns using relationships fit on 2025 games. Each player gets a share of that volume from 2026 and 2025 usage, regressed toward snap-based priors, then efficiency and matchup adjustments. Weeks without a posted line use team ratings built from the lines that are posted (marked "est"). Step-scoring rules like yardage tiers and the completion % bonus are scored as expected values over a realistic range of outcomes, not just the average stat line.</p>
+  <p id="foot-meta"></p>
+</footer>
+
+<script src="engine.js"></script>
+<script>
+(function(){
+"use strict";
+const E = window.FFEngine;
+const TEAM = {ARI:"Cardinals",ATL:"Falcons",BAL:"Ravens",BUF:"Bills",CAR:"Panthers",CHI:"Bears",CIN:"Bengals",CLE:"Browns",DAL:"Cowboys",DEN:"Broncos",DET:"Lions",GB:"Packers",HOU:"Texans",IND:"Colts",JAX:"Jaguars",KC:"Chiefs",LA:"Rams",LAC:"Chargers",LV:"Raiders",MIA:"Dolphins",MIN:"Vikings",NE:"Patriots",NO:"Saints",NYG:"Giants",NYJ:"Jets",PHI:"Eagles",PIT:"Steelers",SEA:"Seahawks",SF:"49ers",TB:"Buccaneers",TEN:"Titans",WAS:"Commanders"};
+const KEY = "lineroom.settings.v2";
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+const WEIGHT_UI = [
+  {k:"vegas", label:"Vegas influence", min:0, max:2, step:0.05, fmt:v=>v.toFixed(2)+"×", help:"How far game lines push volume and TDs away from a team's normal. 0 ignores lines."},
+  {k:"recency", label:"2026 vs 2025", min:0, max:1, step:0.05, fmt:v=>Math.round(v*100)+"%", help:"Higher trusts this season's games more. Early weeks are noisy."},
+  {k:"effReg", label:"Efficiency regression", min:0, max:2, step:0.05, fmt:v=>v.toFixed(2)+"×", help:"How hard yards per target, yards per carry, and TD rate get pulled to league average."},
+  {k:"matchup", label:"Matchup history", min:0, max:1, step:0.05, fmt:v=>Math.round(v*100)+"%", help:"How much points allowed to each position tilts a player's line."},
+];
+// scoring fields: [path, label, type, step]. types: num, mode (yardage rule), tiers ("min:pts, ...")
+const SCORING_UI = [
+  ["Passing (QB)",[["passTd","Passing TD","num",0.5],["int","Interception","num",0.5],["passYd.mode","Yards scoring","mode"],["passYd.per","Yards per point","num",1],["passYd.tiers","Yard tiers (yards:points)","tiers"],["compBonus.min","Completion % bonus at","num",1],["compBonus.pts","Completion % bonus pts","num",0.5]]],
+  ["Rushing",[["rushTd","Rushing TD","num",0.5],["rushYd.mode","Yards scoring","mode"],["rushYd.per","Yards per point","num",1],["rushYd.tiers","Yard tiers (yards:points)","tiers"]]],
+  ["Receiving",[["recTd","Receiving TD","num",0.5],["recYd.mode","Yards scoring","mode"],["recYd.per","Yards per point","num",1],["recYd.tiers","Yard tiers (yards:points)","tiers"],["rec.RB","Reception, RB","num",0.25],["rec.WR","Reception, WR","num",0.25],["rec.TE","Reception, TE","num",0.25],["rec.QB","Reception, QB","num",0.25]]],
+  ["Bonuses",[["longTd","40+ yd TD bonus","num",0.5],["twoPt","2-pt conversion","num",0.5],["fumLost","Fumble lost","num",0.5]]],
+  ["Kicker",[["k.fg","FG made","num",0.5],["k.b40","Bonus 40–49 yd","num",0.5],["k.b50","Bonus 50–59 yd","num",0.5],["k.b60","Bonus 60+ yd","num",0.5],["k.xp","Extra point","num",0.5]]],
+  ["Defense",[["def.sack","Sack","num",0.5],["def.int","Interception","num",0.5],["def.fr","Fumble recovery","num",0.5],["def.td","Return TD","num",0.5],["def.longTd","40+ yd return TD bonus","num",0.5],["def.safety","Safety","num",0.5],["def.pa","Points allowed (up to:points)","tiers"]]],
+  ["Special teams",[["st.td","Kick or punt return TD","num",0.5],["st.longTd","40+ yd return TD bonus","num",0.5],["st.block","Blocked FG, punt, or XP","num",0.5]]],
+  ["Head coach",[["hc.win","Win","num",0.5],["hc.loss","Loss","num",0.5]]],
+];
+const PRESETS = E.PRESETS;
+const getPath = (o, path) => path.split(".").reduce((a,k) => a == null ? a : a[k], o);
+const setPath = (o, path, v) => { const ks = path.split("."); let a = o; ks.slice(0,-1).forEach(k => a = a[k] = a[k] || {}); a[ks[ks.length-1]] = v; };
+const tiersToText = (t) => (t||[]).map(([a,b]) => `${a}:${b}`).join(", ");
+const textToTiers = (s) => { const out = []; for(const part of s.split(",")){ const m = part.trim().match(/^(-?\d+(?:\.\d+)?)\s*:\s*(-?\d+(?:\.\d+)?)$/); if(m) out.push([+m[1], +m[2]]); else if(part.trim()) return null; } return out; };
+
+let DATA, P = {}, state, modelCache = {}, view = "week", sortKey = "mine", pos = "ALL", limit = 60, openId = null;
+
+function defaults(){ const d = {weights:Object.assign({},E.DEFAULT_WEIGHTS), scoring:JSON.parse(JSON.stringify(E.DEFAULT_SCORING)), tags:[], bumps:{}, out:{}}; if(SITE_DEFAULTS) Object.assign(d, JSON.parse(JSON.stringify(SITE_DEFAULTS))); return d; }
+let SITE_DEFAULTS = null;
+function load(){ try{ const s = JSON.parse(localStorage.getItem(KEY)); if(s) return Object.assign(defaults(), s); }catch(e){} return defaults(); }
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){} }
+function toast(msg){ const t=document.createElement("div"); t.className="toast"; t.textContent=msg; document.body.appendChild(t); setTimeout(()=>t.remove(),1800); }
+
+// ---------- projection runs ----------
+function runs(weights, tags, out){
+  const m = E.build(DATA, weights);
+  const weeks = {};
+  for(let w = DATA.meta.week; w <= 18; w++){
+    const byId = {};
+    for(const r of m.projectWeek(w, {tags, avail:out})) byId[r.id] = r;
+    weeks[w] = byId;
+  }
+  return {m, weeks};
+}
+function scoreOf(r, id){ const p = P[id]; return E.score(r, p ? p.pos : id.split("_")[0], state.scoring, DATA.coef); }
+
+let base, mine;
+function recompute(which){
+  if(!base || which === "all") base = runs(E.DEFAULT_WEIGHTS, [], {});
+  mine = runs(state.weights, state.tags, state.out);
+  render();
+}
+
+// ---------- rows ----------
+function entities(){
+  const list = DATA.players.map(p => ({id:p.id, name:p.name, pos:p.pos, team:p.team, status:p.status, rookie:p.rookie}));
+  for(const t of Object.keys(TEAM)){
+    list.push({id:"DEF_"+t, name:TEAM[t]+" D", pos:"DEF", team:t, status:null});
+    list.push({id:"ST_"+t, name:TEAM[t]+" ST", pos:"ST", team:t, status:null});
+    list.push({id:"HC_"+t, name:TEAM[t]+" HC", pos:"HC", team:t, status:null});
+  }
+  return list;
+}
+function bump(id){ return 1 + (state.bumps[id] || 0)/100; }
+
+function buildRows(){
+  const wk = +$("week").value;
+  const rows = [];
+  for(const e of ENT){
+    if(view === "week"){
+      const rm = mine.weeks[wk][e.id], rb = base.weeks[wk][e.id];
+      if(!rm && !rb) continue;
+      const mp = rm ? scoreOf(rm, e.id) * bump(e.id) : 0;
+      const bp = rb ? scoreOf(rb, e.id) : 0;
+      rows.push({e, r: rm || rb, mine: mp, model: bp, delta: mp - bp});
+    } else {
+      let mp = 0, bp = 0, n = 0; const series = [];
+      for(let w = DATA.meta.week; w <= 18; w++){
+        const rm = mine.weeks[w][e.id], rb = base.weeks[w][e.id];
+        const v = rm ? scoreOf(rm, e.id) * bump(e.id) : 0;
+        series.push(mine.m.gameOf[e.team+"|"+w] ? v : null);
+        mp += v; bp += rb ? scoreOf(rb, e.id) : 0; if(rm) n++;
+      }
+      if(mp === 0 && bp === 0) continue;
+      rows.push({e, mine: mp, model: bp, delta: mp - bp, n, series, pg: n ? mp/n : 0, bye: mine.m.byeWeek(e.team)});
+    }
+  }
+  // positional ranks by my points
+  const byPos = {};
+  rows.slice().sort((a,b)=>b.mine-a.mine).forEach(r => { byPos[r.e.pos] = (byPos[r.e.pos]||0)+1; r.posRank = byPos[r.e.pos]; });
+  const byPosM = {};
+  rows.slice().sort((a,b)=>b.model-a.model).forEach(r => { byPosM[r.e.pos] = (byPosM[r.e.pos]||0)+1; r.posRankModel = byPosM[r.e.pos]; });
+  return rows;
+}
+
+function filtered(rows){
+  const q = $("q").value.trim().toLowerCase();
+  const onlyChanged = $("changed").checked;
+  return rows.filter(r => {
+    const e = r.e;
+    if(pos === "FLEX" ? !["RB","WR","TE"].includes(e.pos) : (pos !== "ALL" && e.pos !== pos)) return false;
+    if(q && !(e.name.toLowerCase().includes(q) || e.team.toLowerCase() === q || (TEAM[e.team]||"").toLowerCase().includes(q))) return false;
+    if(onlyChanged && Math.abs(r.delta) < 0.05) return false;
+    return true;
+  }).sort((a,b) => {
+    if(sortKey === "delta") return b.delta - a.delta;
+    if(sortKey === "model") return b.model - a.model;
+    if(sortKey === "pg") return (b.pg||0) - (a.pg||0);
+    return b.mine - a.mine;
+  });
+}
+
+function statLine(r, pos){
+  const s = r.s, f = (x, d=0) => x.toFixed(d);
+  if(pos === "QB") return `${f(s.passYd)} pass yd · ${f(s.passTd,1)} TD · ${f(s.rushYd)} rush yd`;
+  if(pos === "RB") return `${f(s.car,1)} car · ${f(s.rushYd)} yd · ${f(s.rec,1)} rec · ${f(s.rushTd+s.recTd,2)} TD`;
+  if(pos === "WR" || pos === "TE") return `${f(s.tgt,1)} tgt · ${f(s.rec,1)} rec · ${f(s.recYd)} yd · ${f(s.recTd,2)} TD`;
+  if(pos === "K") return `${f(s.fgm,1)} FG · ${f(s.xp,1)} XP`;
+  if(pos === "ST") return `${f(s.sttd,2)} return TD · ${f(s.block,2)} blocks`;
+  if(pos === "HC") return `${Math.round(s.win*100)}% to win · ${s.margin>0?"favored by":"underdog by"} ${f(Math.abs(s.margin),1)}`;
+  return `${f(s.sack,1)} sacks · ${f(s.dint+s.fr,1)} TO · ${f(s.paMean,1)} pts allowed`;
+}
+function flagHtml(e){
+  let h = "";
+  if(state.out[e.id] === 0) h += `<span class="flag out">You: out</span>`;
+  else if(e.status === "IR") h += `<span class="flag out">IR</span>`;
+  else if(e.status === "Out") h += `<span class="flag out">Out</span>`;
+  else if(e.status === "Doubtful") h += `<span class="flag out">D</span>`;
+  else if(e.status === "Questionable") h += `<span class="flag q">Q</span>`;
+  if(state.bumps[e.id]) h += `<span class="flag bump">${state.bumps[e.id]>0?"+":""}${state.bumps[e.id]}%</span>`;
+  return h;
+}
+function deltaHtml(d){
+  if(Math.abs(d) < 0.05) return `<span class="delta flat">–</span>`;
+  return `<span class="delta ${d>0?"up":"down"}">${d>0?"+":""}${d.toFixed(1)}</span>`;
+}
+function bars(series){
+  const max = Math.max(1, ...series.map(v => v||0));
+  const w = 6, gap = 2, h = 24;
+  const rects = series.map((v,i) => v == null
+    ? `<rect class="bye" x="${i*(w+gap)}" y="${h-2}" width="${w}" height="2"></rect>`
+    : `<rect x="${i*(w+gap)}" y="${h - Math.max(2, v/max*h)}" width="${w}" height="${Math.max(2, v/max*h)}" rx="1"></rect>`).join("");
+  return `<svg class="bars" width="${series.length*(w+gap)}" height="${h}" viewBox="0 0 ${series.length*(w+gap)} ${h}" aria-hidden="true">${rects}</svg>`;
+}
+
+function render(){
+  const rows = buildRows();
+  const list = filtered(rows);
+  const wk = +$("week").value;
+  // header
+  const th = (k, label, cls="") => `<th class="${cls}" data-sort="${k||""}" ${sortKey===k?'aria-sort="descending"':""}>${label}</th>`;
+  $("thead").innerHTML = view === "week"
+    ? `<tr>${th("","#")}${th("","Player")}${th("","Game","opp-col")}${th("","Projected line","stats-col")}${th("model","Model","r model-col")}${th("mine","Mine","r")}${th("delta","You vs model","r")}</tr>`
+    : `<tr>${th("","#")}${th("","Player")}${th("","Weekly outlook","stats-col")}${th("pg","Per game","r")}${th("model","Model","r model-col")}${th("mine","Mine","r")}${th("delta","You vs model","r")}</tr>`;
+  const shown = list.slice(0, limit);
+  const cols = 7;
+  let html = "";
+  shown.forEach((r, i) => {
+    const e = r.e;
+    const who = `<div class="pname">${esc(e.name)}${flagHtml(e)}</div><div class="psub"><span class="pos">${e.pos}${r.posRank}</span>${e.team}</div>`;
+    if(view === "week"){
+      const x = r.r;
+      const g = `<div class="opp">${x.home?"vs":"@"} ${x.opp}</div><div class="imp ${x.src==="rating"?"line-est":""}">${x.imp.toFixed(1)} implied${x.src==="rating"?" (est)":""}</div>`;
+      html += `<tr class="row ${openId===e.id?"open":""}" data-id="${e.id}"><td class="rk num">${i+1}</td><td>${who}</td><td class="opp-col">${g}</td><td class="stats stats-col">${statLine(mine.weeks[wk][e.id]||x, e.pos)}</td><td class="r model model-col num">${r.model.toFixed(1)}</td><td class="r pts num">${r.mine.toFixed(1)}</td><td class="r">${deltaHtml(r.delta)}</td></tr>`;
+    } else {
+      html += `<tr class="row ${openId===e.id?"open":""}" data-id="${e.id}"><td class="rk num">${i+1}</td><td>${who}</td><td class="stats-col">${bars(r.series)}<div class="psub">Bye ${r.bye||"–"} · ${r.n} games left</div></td><td class="r num">${r.pg.toFixed(1)}</td><td class="r model model-col num">${r.model.toFixed(0)}</td><td class="r pts num">${r.mine.toFixed(0)}</td><td class="r">${deltaHtml(r.delta)}</td></tr>`;
+    }
+    if(openId === e.id) html += `<tr class="detail"><td colspan="${cols}">${detailHtml(e, r)}</td></tr>`;
+  });
+  if(!shown.length) html = `<tr><td colspan="${cols}" class="loading">No players match. Clear the search or pick another position.</td></tr>`;
+  $("tbody").innerHTML = html;
+  $("more-wrap").hidden = list.length <= limit;
+  renderStrip(rows, wk);
+}
+
+function detailHtml(e, row){
+  const wk = view === "week" ? +$("week").value : DATA.meta.week;
+  const r = mine.weeks[wk][e.id];
+  const pf = mine.m.prof[e.id];
+  const tw = mine.m.teamWeek(e.team, wk);
+  let h = `<div class="detail-grid">`;
+  if(r){
+    const s = r.s;
+    const kv = Object.entries({
+      QB:{"Pass att":s.pa,"Completion %":s.compPct,"Pass yards":s.passYd,"Pass TD":s.passTd,"INT":s.int,"Rush att":s.car,"Rush yards":s.rushYd,"Rush TD":s.rushTd},
+      RB:{"Carries":s.car,"Rush yards":s.rushYd,"Rush TD":s.rushTd,"Targets":s.tgt,"Catches":s.rec,"Rec yards":s.recYd,"Rec TD":s.recTd},
+      WR:{"Targets":s.tgt,"Catches":s.rec,"Rec yards":s.recYd,"Rec TD":s.recTd,"Rush yards":s.rushYd},
+      TE:{"Targets":s.tgt,"Catches":s.rec,"Rec yards":s.recYd,"Rec TD":s.recTd},
+      K:{"FG made":s.fgm,"FG 40–49":s.fg40,"FG 50–59":s.fg50,"FG 60+":s.fg60,"XP made":s.xp},
+      DEF:{"Sacks":s.sack,"INT":s.dint,"Fumble rec":s.fr,"Return TD":s.dtd,"Safety":s.safety,"Opp implied pts":s.paMean},
+      ST:{"Return TD":s.sttd,"Blocked kicks":s.block},
+      HC:{"Win probability":s.win,"Implied margin":s.margin},
+    }[e.pos]).map(([k,v]) => `<span>${k}</span><span class="num">${v.toFixed(v<10?2:1)}</span>`).join("");
+    h += `<div><h3>Week ${wk} line</h3><div class="kv">${kv}</div></div>`;
+  }
+  if(tw){
+    h += `<div><h3>Game context</h3><div class="kv">
+      <span>Opponent</span><span>${tw.home?"vs":"@"} ${tw.opp}</span>
+      <span>Team implied pts</span><span class="num">${tw.imp.toFixed(1)}${tw.src==="rating"?" est":""}</span>
+      <span>Opp implied pts</span><span class="num">${tw.oppImp.toFixed(1)}</span>
+      <span>Team pass att</span><span class="num">${tw.pa.toFixed(1)}</span>
+      <span>Team carries</span><span class="num">${tw.ra.toFixed(1)}</span>
+      <span>Team TDs</span><span class="num">${tw.td.toFixed(2)}</span>
+      ${r && r.matchup && r.matchup !== 1 ? `<span>Matchup multiplier</span><span class="num">${r.matchup.toFixed(3)}×</span>`:""}
+    </div></div>`;
+  }
+  if(pf && e.pos !== "K" && P[e.id]){
+    h += `<div><h3>Usage and efficiency</h3><div class="kv">
+      ${e.pos!=="QB"?`<span>Target share</span><span class="num">${(pf.tgtSh*100).toFixed(1)}%</span>`:""}
+      <span>Carry share</span><span class="num">${(pf.carSh*100).toFixed(1)}%</span>
+      ${e.pos!=="QB"?`<span>Yards / target</span><span class="num">${pf.ypt.toFixed(2)}</span>`:""}
+      <span>Yards / carry</span><span class="num">${pf.ypc.toFixed(2)}</span>
+      ${pf.ypa?`<span>Yards / attempt</span><span class="num">${pf.ypa.toFixed(2)}</span>`:""}
+      <span>2026 games</span><span class="num">${DATA.players.find(p=>p.id===e.id).cur?.g||0}</span>
+    </div></div>`;
+  }
+  const b = state.bumps[e.id] || 0;
+  h += `<div><h3>Your adjustment</h3>
+    <div class="bump-ctl">
+      <button class="btn" data-bump="-10" data-id="${e.id}">−10%</button>
+      <input type="number" id="bump-${e.id}" value="${b}" step="5" aria-label="Bump percent" data-bumpinput="${e.id}">
+      <button class="btn" data-bump="10" data-id="${e.id}">+10%</button>
+    </div>
+    <div class="bump-ctl" style="margin-top:8px">
+      <button class="btn" data-out="${e.id}">${state.out[e.id]===0?"Mark available":"Mark out"}</button>
+      ${b||state.out[e.id]===0?`<button class="btn" data-clear="${e.id}">Clear</button>`:""}
+    </div>
+    <p class="note" style="margin-top:8px">Marking out removes them and gives their targets and carries to teammates.</p>
+  </div></div>`;
+  return h;
+}
+
+function renderStrip(rows, wk){
+  const changed = rows.filter(r => Math.abs(r.delta) >= 0.05);
+  const up = changed.slice().sort((a,b)=>b.delta-a.delta)[0];
+  const down = changed.slice().sort((a,b)=>a.delta-b.delta)[0];
+  const games = DATA.schedule.filter(g => g.week === wk);
+  const lined = games.filter(g => g.spread != null).length;
+  const top = DATA.schedule.filter(g=>g.week===wk && g.total!=null).sort((a,b)=>b.total-a.total)[0];
+  const ctx = view === "week" ? `Week ${wk}` : `Weeks ${DATA.meta.week}–18`;
+  $("strip").innerHTML = `
+    <div class="stat"><div class="k">${ctx} lines</div><div class="v num">${view==="week"?lined+" / "+games.length:"—"}</div><div class="s">${view==="week"?(lined?"games with a posted spread":"all estimated from team ratings"):"posted where available, else estimated"}</div></div>
+    <div class="stat"><div class="k">Highest total</div><div class="v num">${top?top.total:"—"}</div><div class="s">${top?`${top.away} @ ${top.home}`:"No lines posted yet"}</div></div>
+    <div class="stat"><div class="k">You like most</div><div class="v">${up&&up.delta>0?esc(up.e.name):"—"}</div><div class="s">${up&&up.delta>0?`+${up.delta.toFixed(1)} vs model`:"No changes yet"}</div></div>
+    <div class="stat"><div class="k">You fade most</div><div class="v">${down&&down.delta<0?esc(down.e.name):"—"}</div><div class="s">${down&&down.delta<0?`${down.delta.toFixed(1)} vs model`:"No changes yet"}</div></div>`;
+}
+
+// ---------- panel ----------
+function renderWeights(){
+  $("weights").innerHTML = WEIGHT_UI.map(u => `<div class="slider">
+    <label for="w-${u.k}">${u.label}</label><output id="o-${u.k}">${u.fmt(state.weights[u.k])}</output>
+    <input type="range" id="w-${u.k}" min="${u.min}" max="${u.max}" step="${u.step}" value="${state.weights[u.k]}">
+    <p>${u.help}</p></div>`).join("") + `<button class="btn" id="w-reset">Reset weights</button>`;
+  const changed = WEIGHT_UI.some(u => Math.abs(state.weights[u.k] - E.DEFAULT_WEIGHTS[u.k]) > 1e-9);
+  $("w-hint").textContent = changed ? "Custom" : "Default";
+}
+function presetName(){ const cur = JSON.stringify(state.scoring); return Object.keys(PRESETS).find(n => JSON.stringify(PRESETS[n]) === cur) || "Custom"; }
+function renderScoring(){
+  let h = "";
+  for(const [grp, fields] of SCORING_UI){
+    h += `<div class="subhead">${grp}</div><div class="grid2">`;
+    for(const [path, label, type, step] of fields){
+      const id = "sc-" + path.replace(/\./g, "-");
+      const v = getPath(state.scoring, path);
+      if(type === "mode"){
+        const base = path.split(".")[0];
+        h += `<label for="${id}">${label}</label><select id="${id}" data-sc="${path}" data-type="mode" class="wide">${[["linear","Per yard"],["floor","Whole increments"],["tiers","Tiers"]].map(([m,n]) => `<option value="${m}" ${v===m?"selected":""}>${n}</option>`).join("")}</select>`;
+      } else if(type === "tiers"){
+        const mode = path.endsWith(".tiers") ? getPath(state.scoring, path.replace(".tiers", ".mode")) : null;
+        if(mode && mode !== "tiers") continue;
+        h += `<label for="${id}" class="full">${label}</label><input type="text" id="${id}" class="full" data-sc="${path}" data-type="tiers" value="${tiersToText(v)}">`;
+      } else {
+        if(path.endsWith(".per")){ const mode = getPath(state.scoring, path.replace(".per", ".mode")); if(mode === "tiers") continue; }
+        h += `<label for="${id}">${label}</label><input type="number" id="${id}" data-sc="${path}" data-type="num" step="${step}" value="${v ?? 0}">`;
+      }
+    }
+    h += `</div>`;
+  }
+  $("scoring").innerHTML = h;
+  $("presets").innerHTML = Object.keys(PRESETS).map(n => `<button class="chip" data-preset="${n}" aria-pressed="${presetName()===n}">${n}</button>`).join("");
+  $("sc-hint").textContent = presetName();
+}
+function renderTags(){
+  $("tags").innerHTML = state.tags.length ? state.tags.map((t,i) => `<div class="list-item"><span class="grow">${t.pos==="ALL"?"All positions":t.pos+"s"} vs <strong>${TEAM[t.team]}</strong></span><span class="num" style="color:var(${t.pct>=0?"--up":"--down"})">${t.pct>0?"+":""}${t.pct}%</span><button class="x" data-untag="${i}" aria-label="Remove tag">×</button></div>`).join("") : `<p class="empty">No tags yet. Example: WRs vs a team missing both starting corners, +12%.</p>`;
+  $("tag-hint").textContent = state.tags.length ? state.tags.length + " active" : "None";
+}
+function renderBumps(){
+  const ids = new Set([...Object.keys(state.bumps).filter(k=>state.bumps[k]), ...Object.keys(state.out)]);
+  const name = id => { const p = P[id]; if(p) return p.name; const [k,t] = id.split("_"); return TEAM[t] + " " + (k==="DEF"?"D":k); };
+  $("bumps").innerHTML = ids.size ? [...ids].map(id => `<div class="list-item"><span class="grow">${esc(name(id))}</span><span class="num">${state.out[id]===0?"Out":(state.bumps[id]>0?"+":"")+(state.out[id]===0?"":state.bumps[id]+"%")}</span><button class="x" data-clear="${id}" aria-label="Remove">×</button></div>`).join("") : `<p class="empty">No bumps yet.</p>`;
+  $("bump-hint").textContent = ids.size ? ids.size + " players" : "None";
+}
+function renderPanel(){ renderWeights(); renderScoring(); renderTags(); renderBumps(); }
+
+let timer;
+function soon(fn){ clearTimeout(timer); timer = setTimeout(fn, 120); }
+
+function wire(){
+  $("v-week").onclick = () => { view="week"; $("v-week").setAttribute("aria-pressed","true"); $("v-ros").setAttribute("aria-pressed","false"); $("week-pick").hidden=false; if(sortKey==="pg") sortKey="mine"; render(); };
+  $("v-ros").onclick = () => { view="ros"; $("v-ros").setAttribute("aria-pressed","true"); $("v-week").setAttribute("aria-pressed","false"); $("week-pick").hidden=true; render(); };
+  $("week").onchange = () => { openId = null; render(); };
+  $("q").oninput = () => soon(render);
+  $("changed").onchange = render;
+  $("more").onclick = () => { limit += 60; render(); };
+  $("tune-toggle").onclick = () => { const c = $("panel").dataset.collapsed === "true"; $("panel").dataset.collapsed = c ? "false" : "true"; $("tune-toggle").setAttribute("aria-expanded", String(c)); };
+  $("posf").innerHTML = ["ALL","QB","RB","WR","TE","FLEX","K","DEF","ST","HC"].map(p => `<button class="chip" data-pos="${p}" aria-pressed="${p===pos}">${p==="ALL"?"All":p}</button>`).join("");
+  $("posf").onclick = (ev) => { const b = ev.target.closest("[data-pos]"); if(!b) return; pos = b.dataset.pos; limit = 60; [...$("posf").children].forEach(c=>c.setAttribute("aria-pressed", String(c===b))); render(); };
+  $("thead").onclick = (ev) => { const th = ev.target.closest("th[data-sort]"); if(!th || !th.dataset.sort) return; sortKey = th.dataset.sort; render(); };
+
+  $("weights").addEventListener("input", (ev) => {
+    const u = WEIGHT_UI.find(x => "w-"+x.k === ev.target.id); if(!u) return;
+    state.weights[u.k] = +ev.target.value; $("o-"+u.k).textContent = u.fmt(+ev.target.value);
+    save(); soon(() => { recompute(); $("w-hint").textContent = "Custom"; });
+  });
+  $("weights").addEventListener("click", (ev) => { if(ev.target.id === "w-reset"){ state.weights = Object.assign({}, E.DEFAULT_WEIGHTS); save(); renderWeights(); recompute(); } });
+  $("scoring").addEventListener("change", (ev) => {
+    const t = ev.target, path = t.dataset.sc; if(!path) return;
+    if(t.dataset.type === "mode"){ setPath(state.scoring, path, t.value); save(); renderScoring(); render(); return; }
+    if(t.dataset.type === "tiers"){ const tiers = textToTiers(t.value); if(!tiers){ toast("Write tiers like 200:5, 250:10"); return; } setPath(state.scoring, path, tiers); }
+    else { const v = parseFloat(t.value); if(!isFinite(v)) return; setPath(state.scoring, path, v); }
+    save(); render(); $("sc-hint").textContent = presetName();
+    [...$("presets").children].forEach(c => c.setAttribute("aria-pressed", String(c.dataset.preset === presetName())));
+  });
+  $("presets").onclick = (ev) => { const b = ev.target.closest("[data-preset]"); if(!b) return; state.scoring = JSON.parse(JSON.stringify(PRESETS[b.dataset.preset])); save(); renderScoring(); render(); toast(b.dataset.preset + " scoring applied"); };
+
+  $("tag-team").innerHTML = Object.keys(TEAM).map(t => `<option value="${t}">${TEAM[t]}</option>`).join("");
+  $("tag-add").onclick = () => {
+    const pct = parseFloat($("tag-pct").value); if(!isFinite(pct) || !pct) { toast("Enter a percent, like 10 or -10"); return; }
+    state.tags.push({team:$("tag-team").value, pos:$("tag-pos").value, pct}); save(); renderTags(); recompute(); toast("Tag added");
+  };
+  $("tags").onclick = (ev) => { const b = ev.target.closest("[data-untag]"); if(!b) return; state.tags.splice(+b.dataset.untag,1); save(); renderTags(); recompute(); };
+
+  document.addEventListener("click", (ev) => {
+    const row = ev.target.closest("tr.row");
+    if(row){ openId = openId === row.dataset.id ? null : row.dataset.id; render(); return; }
+    const bb = ev.target.closest("[data-bump]");
+    if(bb){ const id = bb.dataset.id; state.bumps[id] = (state.bumps[id]||0) + +bb.dataset.bump; if(!state.bumps[id]) delete state.bumps[id]; save(); renderBumps(); render(); return; }
+    const ob = ev.target.closest("[data-out]");
+    if(ob){ const id = ob.dataset.out; if(state.out[id]===0) delete state.out[id]; else state.out[id]=0; save(); renderBumps(); recompute(); return; }
+    const cb = ev.target.closest("[data-clear]");
+    if(cb){ const id = cb.dataset.clear; const wasOut = id in state.out; delete state.bumps[id]; delete state.out[id]; save(); renderBumps(); wasOut ? recompute() : render(); return; }
+  });
+  document.addEventListener("change", (ev) => {
+    const id = ev.target.dataset && ev.target.dataset.bumpinput; if(!id) return;
+    const v = parseFloat(ev.target.value); if(isFinite(v) && v) state.bumps[id] = v; else delete state.bumps[id];
+    save(); renderBumps(); render();
+  });
+
+  $("copy").onclick = async () => { const txt = JSON.stringify(state); try{ await navigator.clipboard.writeText(txt); toast("Settings copied"); }catch(e){ $("import").value = txt; $("import").select(); toast("Copy the text in the box"); } };
+  $("reset").onclick = () => { state = defaults(); save(); renderPanel(); recompute(); toast("Reset to defaults"); };
+  $("import-btn").onclick = () => { try{ const s = JSON.parse($("import").value); state = Object.assign(defaults(), s); save(); renderPanel(); recompute(); toast("Settings loaded"); }catch(e){ toast("That text isn't valid settings. Copy it again and paste the whole thing."); } };
+}
+
+let ENT;
+fetch("defaults.json").then(r => r.ok ? r.json() : null).catch(() => null).then(def => { SITE_DEFAULTS = def; return fetch("data.json"); }).then(r => { if(!r.ok) throw new Error(r.status); return r.json(); }).then(d => {
+  DATA = d; d.players.forEach(p => P[p.id] = p); ENT = entities();
+  state = load();
+  $("week").innerHTML = Array.from({length: 19 - d.meta.week}, (_, i) => d.meta.week + i).map(w => `<option value="${w}">${w}</option>`).join("");
+  $("meta").textContent = `${d.meta.season} · Updated ${d.meta.generated}`;
+  $("foot-meta").textContent = `Data: ${d.meta.source}. Current week ${d.meta.week}. Model defaults backtested on 2025 Weeks 2–17, where it beat a points-per-game baseline at every position.`;
+  if(window.matchMedia("(min-width: 901px)").matches) $("panel").dataset.collapsed = "false";
+  renderPanel(); wire(); recompute("all");
+}).catch(err => { $("tbody").innerHTML = `<tr><td class="loading" colspan="7">Couldn't load projection data (${esc(err.message)}). Refresh the page to try again.</td></tr>`; });
+})();
+</script>
+
+</body>
+</html>
